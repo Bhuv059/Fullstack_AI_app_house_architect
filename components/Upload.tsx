@@ -1,19 +1,93 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useOutletContext } from "react-router";
 import { CheckCircle2, ImageIcon, UploadIcon } from "lucide-react";
 
-import {PROGRESS_INTERVAL_MS, PROGRESS_STEP, REDIRECT_DELAY_MS,} from "../lib/constants";
+import {
+	PROGRESS_INTERVAL_MS,
+	PROGRESS_STEP,
+	REDIRECT_DELAY_MS,
+} from "../lib/constants";
 
-type UploadProps = { onComplete: (base64: string) => void; };
+type UploadProps = {
+	onComplete: (base64: string) => void;
+};
 
 const Upload = ({ onComplete }: UploadProps) => {
 	const [file, setFile] = useState<File | null>(null);
 	const [isDragging, setIsDragging] = useState(false);
 	const [progress, setProgress] = useState(0);
+	const [base64Data, setBase64Data] = useState<string | null>(null);
 
 	const intervalRef = useRef<number | null>(null);
+	const timeoutRef = useRef<number | null>(null);
+	const completedRef = useRef(false);
+	const isMountedRef = useRef(true);
 
 	const { isSignedIn } = useOutletContext<AuthContext>();
+
+	// -------------------------
+	// Cleanup on unmount
+	// -------------------------
+	useEffect(() => {
+		return () => {
+			isMountedRef.current = false;
+
+			if (intervalRef.current) {
+				clearInterval(intervalRef.current);
+			}
+
+			if (timeoutRef.current) {
+				clearTimeout(timeoutRef.current);
+			}
+		};
+	}, []);
+
+	// -------------------------
+	// Start Progress Interval
+	// -------------------------
+	useEffect(() => {
+		if (!base64Data) return;
+
+		// reset completion guard
+		completedRef.current = false;
+
+		intervalRef.current = window.setInterval(() => {
+			setProgress((prev) => {
+				const next = prev + PROGRESS_STEP;
+				return next >= 100 ? 100 : next;
+			});
+		}, PROGRESS_INTERVAL_MS);
+
+		return () => {
+			if (intervalRef.current) {
+				clearInterval(intervalRef.current);
+			}
+		};
+	}, [base64Data]);
+
+	// -------------------------
+	// Detect Completion
+	// -------------------------
+	useEffect(() => {
+		if (
+			progress === 100 &&
+			base64Data &&
+			!completedRef.current &&
+			isMountedRef.current
+		) {
+			completedRef.current = true;
+
+			if (intervalRef.current) {
+				clearInterval(intervalRef.current);
+			}
+
+			timeoutRef.current = window.setTimeout(() => {
+				if (isMountedRef.current) {
+					onComplete(base64Data);
+				}
+			}, REDIRECT_DELAY_MS);
+		}
+	}, [progress, base64Data, onComplete]);
 
 	// -------------------------
 	// Process File
@@ -22,31 +96,14 @@ const Upload = ({ onComplete }: UploadProps) => {
 		if (!isSignedIn) return;
 
 		const reader = new FileReader();
+		reader.onerror =() =>{
+			setFile(null)
+			setProgress(0)
+		}
 
 		reader.onload = () => {
-			const base64 = reader.result as string;
-
 			setProgress(0);
-
-			intervalRef.current = window.setInterval(() => {
-				setProgress((prev) => {
-					const next = prev + PROGRESS_STEP;
-
-					if (next >= 100) {
-						if (intervalRef.current) {
-							clearInterval(intervalRef.current);
-						}
-
-						setTimeout(() => {
-							onComplete(base64);
-						}, REDIRECT_DELAY_MS);
-
-						return 100;
-					}
-
-					return next;
-				});
-			}, PROGRESS_INTERVAL_MS);
+			setBase64Data(reader.result as string);
 		};
 
 		reader.readAsDataURL(selectedFile);
@@ -82,11 +139,14 @@ const Upload = ({ onComplete }: UploadProps) => {
 		e.preventDefault();
 		if (!isSignedIn) return;
 		setIsDragging(false);
+
 		const droppedFile = e.dataTransfer.files?.[0];
 		if (!droppedFile) return;
-
-		setFile(droppedFile);
-		processFile(droppedFile);
+		const allowedTypes = ['image/jpeg', 'image/png'];
+		if(droppedFile && allowedTypes.includes(droppedFile.type)) {
+			setFile(droppedFile);
+			processFile(droppedFile);
+		}
 	};
 
 	return (
