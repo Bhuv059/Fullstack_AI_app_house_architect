@@ -15,7 +15,8 @@ export const getOrCreateHostingConfig = async() : Promise<HostingConfig| null> =
 	const existing = (await puter.kv.get(HOSTING_CONFIG_KEY) as HostingConfig | null)
 	//  If config exists, return it
 	if (existing?.subdomain) {
-		return existing;
+		//return existing;
+		return {subdomain: existing.subdomain};
 	}
 
 	//  Otherwise create a new one
@@ -27,11 +28,11 @@ export const getOrCreateHostingConfig = async() : Promise<HostingConfig| null> =
 
 	try{
 		const created = await puter.hosting.create(subdomain, '.');
-		const config = { subdomain: created.subdomain}
+		const record = { subdomain: created.subdomain}
 		// Optional but recommended: persist it
-		await puter.kv.set(HOSTING_CONFIG_KEY, config);
+		await puter.kv.set(HOSTING_CONFIG_KEY, record);
 
-		return config;
+		return record;
 		//return { subdomain: created.subdomain };
 	}catch(e){
 		console.warn(`Could not find subdomain: ${e}`);
