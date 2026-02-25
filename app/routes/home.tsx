@@ -32,7 +32,7 @@ export default function Home() {
             return false
         }
 
-        setProjects((prev) => [newItem, ...prev]);
+        setProjects((prev) => [{ ...newItem, sourceImage: saved.sourceImage || newItem.sourceImage }, ...prev]);
         navigate(`/visualizer/${newId}`, {
             state:{
                 initialImage: saved.sourceImage,
