@@ -22,7 +22,7 @@ export const getOrCreateHostingConfig = async() : Promise<HostingConfig| null> =
 	//  Otherwise create a new one
 	const subdomain = createHostingSlug();
 
-	/*if(!existing?.subdomain) { // @ts-ignore
+	/*if(!existing?.subdomain) {
 		 return {subdomain: existing.subdomain};
 	}*/
 
