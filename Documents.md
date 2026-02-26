@@ -95,3 +95,15 @@ Why Puter
 1. kv---->key-value store -- serverless
 2. FS & Hosting---->image sharing
 3. Workers-----> the secured backend
+
+puter.hosting.ts----> domain hosting config, upload image to host
+puter.action.ts --->auth , project-create,...
+ai.action.ts --->
+
+puter.ai.txt2img---
+ask junie to do:
+----------------
+Write a typescript function called fetchasdataurl that takes a url string and returns a promise string. 
+First use fetch to get the image and throw an error if the response fails.  then convert the response 
+into a blob, and finally create a new promise that uses a file reader to read the blob as a data url 
+and resolves  with a result or rejects on error
