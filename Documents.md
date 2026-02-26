@@ -107,3 +107,7 @@ Write a typescript function called fetchasdataurl that takes a url string and re
 First use fetch to get the image and throw an error if the response fails.  then convert the response 
 into a blob, and finally create a new promise that uses a file reader to read the blob as a data url 
 and resolves  with a result or rejects on error
+
+then create fn generate3DView-- using the prompts from constants file---
+
+Implement the above 2 fn  in the visualizer.$id page to generate 3d house plan.
